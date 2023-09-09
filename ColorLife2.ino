@@ -30,6 +30,8 @@ const int ySize = kMatrixHeight;
 byte** board;
 const int speed = 20;
 int initialDelay = 0;
+int xSpeed = 0;
+int ySpeed = 0;
 
 // Teensy 3.0 has the LED on pin 13
 const int ledPin = 13;
@@ -63,13 +65,12 @@ void loop() {
     
     initialDelay = 0;
     start();
-
     int looksDead = 0;
     int lastcrc = 0;
     backgroundLayer.swapBuffers(true);
     delay(initialDelay);
     
-    for (int l=0;l<8000;l++) { 
+    for (int l=1;l<=8000;l++) { 
       delay(speed);
       byte board2[xSize][ySize];
       byte crc = 0;
@@ -116,10 +117,22 @@ void loop() {
          else { looksDead = 0; }
          if (looksDead > 10) break;
          lastcrc = crc;
-      } 
-      for (int x=0; x<xSize; x++) {
-        for (int y=0; y<ySize; y++) {
-          board[x][y] = board2[x][y];
+      }
+      int xMove = 0;
+      int yMove = 0; 
+      if (xSpeed != 0 || ySpeed != 0) {
+        
+         if (l % (xSpeed*10) == 0) {
+            xMove = 10;
+         }
+         if (l % (ySpeed*10) == 0) {
+            yMove = 10;
+         }
+      }
+
+      for (int x=0; x<xSize-xMove; x++) {
+        for (int y=0; y<ySize-yMove; y++) {
+          board[x+xMove][y+yMove] = board2[x][y];
         }
       }
       backgroundLayer.swapBuffers(true);
@@ -202,6 +215,20 @@ void tannersp46gun() {
     "A.2A.A.2A.A$3.2D3.2A.A5.A.2A$3.2D4.2A.A3.A.2A2.A.2A$10.3A3.3A3.2A.A2$"
     "2.2D$3.D$3D$D13.D$13.D.D.D.2D$12.D.2D.2D.D$12.D$11.2D!";
   loadrle(0, 0, rle);
+}
+
+void lobstr() {
+  //#N lobster.rle
+  //#O Matthias Merzenich, 2011
+  //#C https://conwaylife.com/wiki/Lobster_(spaceship)
+  //#C https://www.conwaylife.com/patterns/lobster.rle
+  int x = 26, y = 26;
+  const char * rle =
+    "12b3o$12bo$13bo2b2o$16b2o$12b2o$13b2o$12bo2bo2$14bo2bo$14bo3bo$15b3obo"
+    "$20bo$2o2bobo13bo$obob2o13bo$o4bo2b2o13b2o$6bo3bo6b2o2b2o2bo$2b2o6bo6b"
+    "o2bo$2b2o4bobo4b2o$9bo5bo3bo3bo$10bo2bo4b2o$11b2o3bo5bobo$15bo8b2o$15b"
+    "o4bo$14bo3bo$14bo5b2o$15bo5bo!";
+  loadrle((xSize-x)/2, (ySize-y)/2, rle);
 }
 
 void loadrle(int xOff, int yOff, const char* rle) {
