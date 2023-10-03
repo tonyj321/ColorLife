@@ -1,4 +1,4 @@
-#define USE_ADAFRUIT_GFX_LAYERS
+//#define USE_ADAFRUIT_GFX_LAYERS
 
 #include <Entropy.h>
 #include <MatrixHardware_Teensy4_ShieldV5.h>  // SmartLED Shield for Teensy 4 (V5)
@@ -17,6 +17,10 @@ const uint8_t kBackgroundLayerOptions = (SM_BACKGROUND_OPTIONS_NONE);
 
 SMARTMATRIX_ALLOCATE_BUFFERS(matrix, kMatrixWidth, kMatrixHeight, kRefreshDepth, kDmaBufferRows, kPanelType, kMatrixOptions);
 SMARTMATRIX_ALLOCATE_BACKGROUND_LAYER(backgroundLayer, kMatrixWidth, kMatrixHeight, COLOR_DEPTH, kBackgroundLayerOptions);
+
+#include <Adafruit_GFX.h>  // Core graphics library
+#include <Fonts/FreeSerif9pt7b.h>
+#include <TimeLib.h>
 
 const int defaultBrightness = 100 * (255 / 100);  // full brightness
 // Red and green; yellow and purple; orange and blue; green and magenta
@@ -53,7 +57,7 @@ const rgb24 pink = { 250, 190, 212 };
 const rgb24 apricot = { 255, 215, 180 };
 const rgb24 beige = { 255, 250, 200 };
 const rgb24 mint = { 170, 255, 195 };
-const rgb24 lavendar = { 220, 290, 255 };
+const rgb24 lavendar = { 220, 190, 255 };
 const rgb24 white = { 255, 255, 255 };
 
 const rgb24 dead = black;
@@ -63,8 +67,7 @@ const rgb24 colors[nColors] = { dead, red, orange, yellow, green, cyan, blue, pu
 
 const int xSize = kMatrixWidth;
 const int ySize = kMatrixHeight;
-SimpleLife* life;
-Quadlife* quadlife;
+Life* life;
 const int speed = 20;
 int initialDelay = 0;
 int xSpeed = 0;
@@ -73,12 +76,45 @@ int ySpeed = 0;
 // Teensy 3.0 has the LED on pin 13
 const int ledPin = 13;
 
+time_t getTeensy3Time() {
+  return Teensy3Clock.get();
+}
+
+/*  code to process time sync messages from the serial port   */
+#define TIME_HEADER "T"  // Header tag for serial time sync message
+
+unsigned long processSyncMessage() {
+  unsigned long pctime = 0L;
+  const unsigned long DEFAULT_TIME = 1357041600;  // Jan 1 2013
+
+  if (Serial.find(TIME_HEADER)) {
+    pctime = Serial.parseInt();
+    return pctime;
+    if (pctime < DEFAULT_TIME) {  // check the value is a valid time (greater than Jan 1 2013)
+      pctime = 0L;                // return 0 to indicate that the time is not valid
+    }
+  }
+  return pctime;
+}
+
 // the setup() method runs once, when the sketch starts
 void setup() {
   // initialize the digital pin as an output.
   pinMode(ledPin, OUTPUT);
 
+  // set the Time library to use Teensy 3.0's RTC to keep time
+  setSyncProvider(getTeensy3Time);
+
   Serial.begin(115200);
+  while (!Serial)
+    ;  // Wait for Arduino Serial Monitor to open
+  delay(100);
+  if (timeStatus() != timeSet) {
+    Serial.println("Unable to sync with the RTC");
+  } else {
+    Serial.println("RTC has set the system time");
+  }
+
   Entropy.Initialize();
   randomSeed(Entropy.random());
 
@@ -87,27 +123,40 @@ void setup() {
   matrix.setBrightness(defaultBrightness);
   backgroundLayer.enableColorCorrection(true);
 
-  life = new SimpleLife(xSize, ySize);
-  quadlife = new Quadlife();
+  //life = new SimpleLife(xSize, ySize);
+  life = new InfiniteLife(4);
 }
 
 // the loop() method runs over and over again,
 // as long as the board has power
 void loop() {
+  if (Serial.available()) {
+    time_t t = processSyncMessage();
+    if (t != 0) {
+      Teensy3Clock.set(t);  // set the RTC
+      setTime(t);
+    }
+  }
+
   // clear screen
   backgroundLayer.fillScreen(dead);
   backgroundLayer.swapBuffers(true);
 
   initialDelay = 0;
+  life->clear();
   start();
   life->iterateLive([](int x, int y, int on) {
-    backgroundLayer.drawPixel(x, y, colors[on]);
+    if (x >= 0 && x < xSize && y >= 0 && y < ySize) {
+      backgroundLayer.drawPixel(x, y, colors[on]);
+    }
   });
   backgroundLayer.swapBuffers(true);
 
   int looksDead = 0;
   int lastcrc = 0;
   delay(initialDelay);
+  //life->dump();
+  //for (;;) {}
 
   for (int l = 1; l <= 8000; l++) {
     delay(speed);
@@ -117,17 +166,20 @@ void loop() {
     //life->iterateLive(update);
 
     life->iterateLive([&crc](int x, int y, int on) {
-      backgroundLayer.drawPixel(x, y, colors[on]);
-      for (byte tempI = 8; tempI; tempI--) {
-        byte sum = (crc ^ on) & 0x01;
-        crc >>= 1;
-        if (sum) {
-          crc ^= 0x8C;
+      if (x >= 0 && x < xSize && y >= 0 && y < ySize) {
+        backgroundLayer.drawPixel(x, y, colors[on]);
+        for (byte tempI = 8; tempI; tempI--) {
+          byte sum = (crc ^ on) & 0x01;
+          crc >>= 1;
+          if (sum) {
+            crc ^= 0x8C;
+          }
+          on >>= 1;
         }
-        on >>= 1;
       }
     });
     backgroundLayer.swapBuffers(true);
+    //for (;;){}
 
     if (l % 12 == 0) {
       if (crc == lastcrc) {
@@ -142,15 +194,60 @@ void loop() {
 }
 
 void start() {
-  int r = random(100);
-  if (r < 10) {
-    ASJ2023();
-  } else if (r == 10) {
-    snarkcatalystvariants();
-  } else if (r == 11) {
-    tannersp46gun();
-  } else {
-    startRandom();
+  //int r = random(100);
+  //if (r < 10) {
+  //  ASJ2023();
+  //} else if (r == 10) {
+  //  snarkcatalystvariants();
+  //} else if (r == 11) {
+  //  tannersp46gun();
+  //} else {
+  //  startRandom();
+  //lobstr();
+  char buffer[40];
+  const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+  sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
+  startText(buffer);
+  //startText("ASJ\n2023");
+}
+
+void startText(const char* text) {
+  initialDelay = 1000;
+  GFXcanvas8 canvas(xSize, ySize);
+  canvas.setFont(&FreeSerif9pt7b);
+  // Count lines
+  char buffer[64];
+  strcpy(buffer, text);
+  int nLines = 1;
+  for (unsigned int i = 0; i < strlen(text); i++) {
+    if (text[i] == '\n') {
+      nLines++;
+      buffer[i] = '\0';
+    }
+  }
+  Serial.printf("nLines = %d\n", nLines);
+  uint8_t color = 1;
+  int16_t x1, y1;
+  uint16_t w, h;
+  canvas.getTextBounds(buffer, 0, 0, &x1, &y1, &w, &h);
+  Serial.printf("0 %s %d %d %d %d %d\n", buffer, x1, y1, w, h, (xSize - w) / 2);
+  canvas.setCursor((xSize - w) / 2, 18);
+  for (unsigned int i = 0; i < strlen(text); i++) {
+    if (text[i] == '\n') {
+      canvas.println();
+      canvas.getTextBounds(buffer + i + 1, 0, 0, &x1, &y1, &w, &h);
+      Serial.printf("1 %s %d %d %d %d %d\n", buffer + i + 1, x1, y1, w, h, (xSize - w) / 2);
+      canvas.setCursor((xSize - w) / 2, canvas.getCursorY() - 4);
+    } else {
+      canvas.setTextColor(color++);
+      if (color >= nColors) color = 1;
+      canvas.print(text[i]);
+    }
+  }
+  for (int y = 0; y < ySize; y++) {
+    for (int x = 0; x < xSize; x++) {
+      life->set(x, y, canvas.getPixel(x, y));
+    }
   }
 }
 
@@ -205,7 +302,7 @@ void tannersp46gun() {
   //#N tannersp46gun.rle
   //#C https://conwaylife.com/wiki/Tanner%27s_p46
   //#C https://www.conwaylife.com/patterns/tannersp46gun.rle
-  int x = 31, y = 44;
+  //int x = 31, y = 44;
   const char* rle = R"(
     17.2B5.2C$17.2B5.2C11$17.B7.C$15.B.2B5.2C.C$15.B3.2B.2C3.C$16.B3.B.C3.
     C$17.3B3.3C10$14.A14.A$13.3A14.A$12.A.A.A11.3A$12.A.A.A$10.2A.3A.2A$9.
@@ -233,7 +330,7 @@ void lobstr() {
 void loadrle(int xOff, int yOff, const char* rle) {
   life->clear();
 
-  char* p = rle;
+  const char* p = rle;
   int count = 0;
   int x = xOff;
   int y = yOff;
