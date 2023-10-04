@@ -124,7 +124,7 @@ void setup() {
   backgroundLayer.enableColorCorrection(true);
 
   //life = new SimpleLife(xSize, ySize);
-  life = new InfiniteLife(4);
+  life = new InfiniteLife(3);
 }
 
 // the loop() method runs over and over again,
@@ -204,10 +204,11 @@ void start() {
   //} else {
   //  startRandom();
   //lobstr();
-  char buffer[40];
-  const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-  sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
-  startText(buffer);
+  //char buffer[40];
+  //const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+  //sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
+  //startText(buffer);
+  Lava();
   //startText("ASJ\n2023");
 }
 
@@ -261,6 +262,22 @@ void startRandom() {
     }
   }
 }
+
+void Lava() {
+  int x = 63, y = 63;  // rule = 12345/45678/8:T300,300
+  const char* rle = R"(
+    63A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$
+    A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A
+    $A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.
+    A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A
+    61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$
+    A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A
+    $A61.A$A61.A$A61.A$63A!
+  )";
+  loadrle((xSize - x) / 2, (ySize - y) / 2, rle);
+}
+
+
 
 void ASJ2023() {
   initialDelay = 1000;

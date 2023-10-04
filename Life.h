@@ -93,6 +93,65 @@ public:
   virtual int transition(int* neighbors) = 0;
 };
 
+class GenerationsTreeRule : public TreeRule {
+  public:
+    int transition(int* neighbors) {
+      int node = 37;
+      int* n = neighbors;
+      node = lookup[node][*(n++)];
+      node = lookup[node][*(n++)];
+      node = lookup[node][*(n++)];
+      node = lookup[node][*(n++)];
+      node = lookup[node][*(n++)];
+      node = lookup[node][*(n++)];
+      node = lookup[node][*(n++)];
+      node = lookup[node][*(n++)];
+      node = lookup[node][*(n++)];
+      return node;
+
+    }
+  private:
+    const byte lookup[38][8] = {
+      {0,2,3,4,5,6,7,0},
+      {0,1,3,4,5,6,7,0},
+      {0,1,0,0,0,0,0,0},
+      {1,1,1,1,1,1,1,1},
+      {2,3,2,2,2,2,2,2},
+      {3,3,3,3,3,3,3,3},
+      {4,5,4,4,4,4,4,4},
+      {1,1,3,4,5,6,7,0},
+      {1,7,1,1,1,1,1,1},
+      {3,8,3,3,3,3,3,3},
+      {5,9,5,5,5,5,5,5},
+      {6,10,6,6,6,6,6,6},
+      {7,7,7,7,7,7,7,7},
+      {8,12,8,8,8,8,8,8},
+      {9,13,9,9,9,9,9,9},
+      {10,14,10,10,10,10,10,10},
+      {11,15,11,11,11,11,11,11},
+      {1,2,3,4,5,6,7,0},
+      {7,17,7,7,7,7,7,7},
+      {12,18,12,12,12,12,12,12},
+      {13,19,13,13,13,13,13,13},
+      {14,20,14,14,14,14,14,14},
+      {15,21,15,15,15,15,15,15},
+      {16,22,16,16,16,16,16,16},
+      {17,17,17,17,17,17,17,17},
+      {18,24,18,18,18,18,18,18},
+      {19,25,19,19,19,19,19,19},
+      {20,26,20,20,20,20,20,20},
+      {21,27,21,21,21,21,21,21},
+      {22,28,22,22,22,22,22,22},
+      {23,29,23,23,23,23,23,23},
+      {24,24,24,24,24,24,24,24},
+      {25,31,25,25,25,25,25,25},
+      {26,32,26,26,26,26,26,26},
+      {27,33,27,27,27,27,27,27},
+      {28,34,28,28,28,28,28,28},
+      {29,35,29,29,29,29,29,29},
+      {30,36,30,30,30,30,30,30}
+    };
+};
 
 class NiemiecTreeRule : public TreeRule {
 public:
@@ -402,7 +461,7 @@ private:
 class InfiniteLife : public Life {
 public:
   InfiniteLife(byte bitsPerPixel)
-    : bitsPerPixel(bitsPerPixel), treeRule(new NiemiecTreeRule()) {
+    : bitsPerPixel(bitsPerPixel), treeRule(new GenerationsTreeRule()) {
     data1 = new Data(10000);
     data2 = new Data(10000);
     data = data1;
@@ -522,45 +581,36 @@ private:
     }
     void load(int x, int px, int cx, int nx) {
       if (x - this->x == 1) {
-        shift(px, cx, nx);
-        lambda(this->x, this->y, neighbors);
-        this->x++;
+        shiftAndCall(px, cx, nx);
       } else if (x - this->x == 2) {
-        shift(0, 0, 0);
-        lambda(this->x, this->y, neighbors);
-        this->x++;
-        shift(px, cx, nx);
-        lambda(this->x, this->y, neighbors);
-        this->x++;
+        shiftAndCall(0, 0, 0);
+        shiftAndCall(px, cx, nx);
       } else {
         if (this->x != INT_MIN) {
-          shift(0, 0, 0);
-          lambda(this->x, this->y, neighbors);
-          this->x++;
-          shift(0, 0, 0);
-          lambda(this->x, this->y, neighbors);
+          shiftAndCall(0, 0, 0);
+          shiftAndCall(0, 0, 0);
         }
-        clear();
-        shift(px, cx, nx);
-        lambda(x - 1, y, neighbors);
-        this->x = x;
+        this->x = x - 1;
+        shiftAndCall(px, cx, nx);
       }
     }
     void endRow(int y) {
-      shift(0, 0, 0);
-      lambda(this->x, this->y, neighbors);
-      this->x++;
-      shift(0, 0, 0);
-      lambda(this->x, this->y, neighbors);
-      this->x++;
+      shiftAndCall(0, 0, 0);
+      shiftAndCall(0, 0, 0);
     }
     void startRow(int y) {
       this->y = y;
       this->x = INT_MIN;
+      clear();
     }
   private:
     void clear() {
       memset(neighbors, 0, sizeof(neighbors[0]) * 9);
+    }
+    void shiftAndCall(int a, int b, int c) {
+      shift(a, b, c);
+      lambda(this->x, this->y, neighbors);
+      this->x++;
     }
     void shift(int a, int b, int c) {
       // Use the same order as SimpleLife
