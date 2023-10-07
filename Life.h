@@ -94,9 +94,68 @@ public:
 };
 
 class GenerationsTreeRule : public TreeRule {
+public:
+  int transition(int* neighbors) {
+    int node = 37;
+    int* n = neighbors;
+    node = lookup[node][*(n++)];
+    node = lookup[node][*(n++)];
+    node = lookup[node][*(n++)];
+    node = lookup[node][*(n++)];
+    node = lookup[node][*(n++)];
+    node = lookup[node][*(n++)];
+    node = lookup[node][*(n++)];
+    node = lookup[node][*(n++)];
+    node = lookup[node][*(n++)];
+    return node;
+  }
+private:
+  const byte lookup[38][8] = {
+    { 0, 2, 3, 4, 5, 6, 7, 0 },
+    { 0, 1, 3, 4, 5, 6, 7, 0 },
+    { 0, 1, 0, 0, 0, 0, 0, 0 },
+    { 1, 1, 1, 1, 1, 1, 1, 1 },
+    { 2, 3, 2, 2, 2, 2, 2, 2 },
+    { 3, 3, 3, 3, 3, 3, 3, 3 },
+    { 4, 5, 4, 4, 4, 4, 4, 4 },
+    { 1, 1, 3, 4, 5, 6, 7, 0 },
+    { 1, 7, 1, 1, 1, 1, 1, 1 },
+    { 3, 8, 3, 3, 3, 3, 3, 3 },
+    { 5, 9, 5, 5, 5, 5, 5, 5 },
+    { 6, 10, 6, 6, 6, 6, 6, 6 },
+    { 7, 7, 7, 7, 7, 7, 7, 7 },
+    { 8, 12, 8, 8, 8, 8, 8, 8 },
+    { 9, 13, 9, 9, 9, 9, 9, 9 },
+    { 10, 14, 10, 10, 10, 10, 10, 10 },
+    { 11, 15, 11, 11, 11, 11, 11, 11 },
+    { 1, 2, 3, 4, 5, 6, 7, 0 },
+    { 7, 17, 7, 7, 7, 7, 7, 7 },
+    { 12, 18, 12, 12, 12, 12, 12, 12 },
+    { 13, 19, 13, 13, 13, 13, 13, 13 },
+    { 14, 20, 14, 14, 14, 14, 14, 14 },
+    { 15, 21, 15, 15, 15, 15, 15, 15 },
+    { 16, 22, 16, 16, 16, 16, 16, 16 },
+    { 17, 17, 17, 17, 17, 17, 17, 17 },
+    { 18, 24, 18, 18, 18, 18, 18, 18 },
+    { 19, 25, 19, 19, 19, 19, 19, 19 },
+    { 20, 26, 20, 20, 20, 20, 20, 20 },
+    { 21, 27, 21, 21, 21, 21, 21, 21 },
+    { 22, 28, 22, 22, 22, 22, 22, 22 },
+    { 23, 29, 23, 23, 23, 23, 23, 23 },
+    { 24, 24, 24, 24, 24, 24, 24, 24 },
+    { 25, 31, 25, 25, 25, 25, 25, 25 },
+    { 26, 32, 26, 26, 26, 26, 26, 26 },
+    { 27, 33, 27, 27, 27, 27, 27, 27 },
+    { 28, 34, 28, 28, 28, 28, 28, 28 },
+    { 29, 35, 29, 29, 29, 29, 29, 29 },
+    { 30, 36, 30, 30, 30, 30, 30, 30 }
+  };
+};
+
+class Generations1TreeRule : public TreeRule {
   public:
     int transition(int* neighbors) {
-      int node = 37;
+      int node = 35;
       int* n = neighbors;
       node = lookup[node][*(n++)];
       node = lookup[node][*(n++)];
@@ -111,45 +170,43 @@ class GenerationsTreeRule : public TreeRule {
 
     }
   private:
-    const byte lookup[38][8] = {
-      {0,2,3,4,5,6,7,0},
-      {0,1,3,4,5,6,7,0},
-      {0,1,0,0,0,0,0,0},
-      {1,1,1,1,1,1,1,1},
-      {2,3,2,2,2,2,2,2},
-      {3,3,3,3,3,3,3,3},
-      {4,5,4,4,4,4,4,4},
-      {1,1,3,4,5,6,7,0},
-      {1,7,1,1,1,1,1,1},
-      {3,8,3,3,3,3,3,3},
-      {5,9,5,5,5,5,5,5},
-      {6,10,6,6,6,6,6,6},
-      {7,7,7,7,7,7,7,7},
-      {8,12,8,8,8,8,8,8},
-      {9,13,9,9,9,9,9,9},
-      {10,14,10,10,10,10,10,10},
-      {11,15,11,11,11,11,11,11},
-      {1,2,3,4,5,6,7,0},
-      {7,17,7,7,7,7,7,7},
-      {12,18,12,12,12,12,12,12},
-      {13,19,13,13,13,13,13,13},
-      {14,20,14,14,14,14,14,14},
-      {15,21,15,15,15,15,15,15},
-      {16,22,16,16,16,16,16,16},
-      {17,17,17,17,17,17,17,17},
-      {18,24,18,18,18,18,18,18},
-      {19,25,19,19,19,19,19,19},
-      {20,26,20,20,20,20,20,20},
-      {21,27,21,21,21,21,21,21},
-      {22,28,22,22,22,22,22,22},
-      {23,29,23,23,23,23,23,23},
-      {24,24,24,24,24,24,24,24},
-      {25,31,25,25,25,25,25,25},
-      {26,32,26,26,26,26,26,26},
-      {27,33,27,27,27,27,27,27},
-      {28,34,28,28,28,28,28,28},
-      {29,35,29,29,29,29,29,29},
-      {30,36,30,30,30,30,30,30}
+    const byte lookup[36][4] = {
+      {0,2,3,0},
+      {0,0,0,0},
+      {1,2,3,0},
+      {0,2,0,0},
+      {1,3,1,1},
+      {0,1,3,0},
+      {2,5,2,2},
+      {3,6,3,3},
+      {4,7,4,4},
+      {5,5,5,5},
+      {6,9,6,6},
+      {7,10,7,7},
+      {8,11,8,8},
+      {9,9,9,9},
+      {10,13,10,10},
+      {11,14,11,11},
+      {12,15,12,12},
+      {5,0,5,5},
+      {9,17,9,9},
+      {13,18,13,13},
+      {14,19,14,14},
+      {15,20,15,15},
+      {16,21,16,16},
+      {17,1,17,17},
+      {18,23,18,18},
+      {19,24,19,19},
+      {20,25,20,20},
+      {21,26,21,21},
+      {22,27,22,22},
+      {1,1,1,1},
+      {23,29,23,23},
+      {24,30,24,24},
+      {25,31,25,25},
+      {26,32,26,26},
+      {27,33,27,27},
+      {28,34,28,28}
     };
 };
 
@@ -460,8 +517,8 @@ private:
 
 class InfiniteLife : public Life {
 public:
-  InfiniteLife(byte bitsPerPixel)
-    : bitsPerPixel(bitsPerPixel), treeRule(new GenerationsTreeRule()) {
+  InfiniteLife(byte bitsPerPixel, TreeRule* treeRule)
+    : bitsPerPixel(bitsPerPixel), treeRule(treeRule) {
     data1 = new Data(10000);
     data2 = new Data(10000);
     data = data1;
@@ -704,11 +761,9 @@ private:
       }
       return currX;
     }
-
     int getValue() {
       return value & parent.mask;
     }
-
     int getAndConditionallyIncrement(int x) {
       if (x == currX) {
         int rValue = getValue();
@@ -716,15 +771,6 @@ private:
         return rValue;
       } else {
         return 0;
-      }
-    }
-    int get(int x) {
-      if (currX == x) {
-        return value & parent.mask;
-      } else if (currX > x) {
-
-      } else {
-        assert(false);
       }
     }
     bool wasDead() {
@@ -743,25 +789,25 @@ private:
   };
 
   class Data {
-    public:
-      Data(int allocLength) {
-        this->allocLength = allocLength;
-        this->data = (int*) malloc(sizeof(int) * allocLength);
-        clear();
-      }
-      ~Data() {
-        free(data);
-      }
-      void clear() {
-        dataLength = 0;
-        xCurrent = INT_MIN;
-        yCurrent = INT_MIN;
-      }
-      int allocLength;
-      int dataLength;
-      int* data;
-      int xCurrent;
-      int yCurrent;
+  public:
+    Data(int allocLength) {
+      this->allocLength = allocLength;
+      this->data = (int*)malloc(sizeof(int) * allocLength);
+      clear();
+    }
+    ~Data() {
+      free(data);
+    }
+    void clear() {
+      dataLength = 0;
+      xCurrent = INT_MIN;
+      yCurrent = INT_MIN;
+    }
+    int allocLength;
+    int dataLength;
+    int* data;
+    int xCurrent;
+    int yCurrent;
   };
 
   void set(Data* data, int x, int y, byte value) {
@@ -805,8 +851,8 @@ private:
 
 class SimpleLife : public Life {
 public:
-  SimpleLife(int w, int h)
-    : width(w), height(h), treeRule(new NiemiecTreeRule()) {
+  SimpleLife(int w, int h, TreeRule* treeRule)
+    : width(w), height(h), treeRule(treeRule) {
     data1 = (byte*)malloc(sizeof(byte) * w * h);
     data2 = (byte*)malloc(sizeof(byte) * w * h);
     data = data1;

@@ -62,8 +62,14 @@ const rgb24 white = { 255, 255, 255 };
 
 const rgb24 dead = black;
 
-const int nColors = 9;
-const rgb24 colors[nColors] = { dead, red, orange, yellow, green, cyan, blue, purple, magenta };
+//const int nColors = 9;
+//const rgb24 colors[nColors] = { dead, red, orange, yellow, green, cyan, blue, purple, magenta };
+// Generations colors
+//const int nColors = 8;
+//const rgb24 colors[nColors] = { dead, rgb24(255, 0, 0), rgb24(255, 42, 0), rgb24(255, 84, 0), rgb24(255, 126, 0), rgb24(255, 168, 0), rgb24(255, 210, 0), rgb24(255, 254, 0) };
+// SteepleChas colors
+const int nColors = 4;
+const rgb24 colors[nColors] = { dead, rgb24(255, 0, 0), rgb24(255, 128, 0),  rgb24(255, 255, 0) };
 
 const int xSize = kMatrixWidth;
 const int ySize = kMatrixHeight;
@@ -123,8 +129,8 @@ void setup() {
   matrix.setBrightness(defaultBrightness);
   backgroundLayer.enableColorCorrection(true);
 
-  //life = new SimpleLife(xSize, ySize);
-  life = new InfiniteLife(3);
+  //life = new SimpleLife(xSize, ySize, new NiemiecTreeRule());
+  life = new InfiniteLife(2, new Generations1TreeRule());
 }
 
 // the loop() method runs over and over again,
@@ -179,7 +185,7 @@ void loop() {
       }
     });
     backgroundLayer.swapBuffers(true);
-    //for (;;){}
+    //if (l == 1000) for (;;){}
 
     if (l % 12 == 0) {
       if (crc == lastcrc) {
@@ -208,7 +214,8 @@ void start() {
   //const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
   //sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
   //startText(buffer);
-  Lava();
+  //Lava();
+  SteepleChase();
   //startText("ASJ\n2023");
 }
 
@@ -263,6 +270,7 @@ void startRandom() {
   }
 }
 
+// Lava rule by Mirek Wojtowicz
 void Lava() {
   int x = 63, y = 63;  // rule = 12345/45678/8:T300,300
   const char* rle = R"(
@@ -277,7 +285,28 @@ void Lava() {
   loadrle((xSize - x) / 2, (ySize - y) / 2, rle);
 }
 
-
+// Star Wars Fun collection
+// 
+// Steeplechase, p20
+// 
+// Mirek Wojtowicz, May 1999
+void SteepleChase() {
+  int x = 63, y = 59;  // rule = 345/2/4:P500,500
+  const char* rle = R"(
+    2$31.A$30.3A8.A2.A$31.A8.6A$31.A9.A2.A$30.3A8.A2.A$31.A8.6A$31.A9.A2.
+    A$30.3A8.A2.A$31.A8.6A$5.CB24.A9.A2.A$7.C22.3A8.A2.A$4.A.A.B22.A8.6A
+    10.CB$.A.6A22.A9.A2.A11.A.A$.B2A2.A.A11.A9.3A8.A2.A10.3A$.C.BA.CB11.
+    3A9.A8.6A10.A$20.A10.A9.A2.A$20.A9.3A$19.3A9.A$20.A10.A$20.A9.3A$19.
+    3A9.A$20.A10.A$20.A9.3A$19.3A9.A$20.A4$61.A$60.3A$48.A12.A$16.A4.A15.
+    A9.3A11.A$2.A12.3A2.3A13.3A7.2A.2A10.2A$.3A12.A.2A.A13.2A.2A5.2A.A.2A
+    9.A$2.A13.A.2A.A12.2A.A.2A5.2A.A.2A8.A$.ABC11.3A2.3A10.2A.A.2A7.2A.2A
+    9.2A$16.A4.A12.2A.2A9.3A10.A$35.3A11.A11.A$36.A23.3A$61.A10$14.A4.A4.
+    A8.A6.A9.A$13.3A2.3A2.3A6.3A4.3A7.3A$14.A.2A.A.2A.A8.A6.A9.A6.A.C$3.A
+    10.A.2A.A.2A.A8.A6.A9.A5.3AB$2.3A8.3A2.3A2.3A6.3A4.3A7.3A5.A.A$3.A10.
+    A4.A4.A8.A6.A9.A$2.ABC!
+  )";
+  loadrle((xSize - x) / 2, (ySize - y) / 2, rle);
+}
 
 void ASJ2023() {
   initialDelay = 1000;
