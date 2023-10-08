@@ -1,3 +1,4 @@
+#include <Arduino.h>
 //#define USE_ADAFRUIT_GFX_LAYERS
 
 #include <Entropy.h>
@@ -132,6 +133,10 @@ void setup() {
   //life = new SimpleLife(xSize, ySize, new NiemiecTreeRule());
   life = new InfiniteLife(2, new Generations1TreeRule());
 }
+
+void start();
+void SteepleChase();
+void loadrle(int x, int y, const char *rle);
 
 // the loop() method runs over and over again,
 // as long as the board has power
