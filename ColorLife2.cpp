@@ -5,7 +5,7 @@
 #include <MatrixHardware_Teensy4_ShieldV5.h>  // SmartLED Shield for Teensy 4 (V5)
 #include <SmartMatrix.h>
 
-#include "Life.h"
+#include "LEDMatrixLife.h"
 
 #define COLOR_DEPTH 24                                         // Choose the color depth used for storing pixels in the layers: 24 or 48 (24 is good for most sketches - If the sketch uses type `rgb24` directly, COLOR_DEPTH must be 24)
 const uint16_t kMatrixWidth = 64;                              // Set to the width of your display, must be a multiple of 8
@@ -63,22 +63,19 @@ const rgb24 white = { 255, 255, 255 };
 
 const rgb24 dead = black;
 
-//const int nColors = 9;
-//const rgb24 colors[nColors] = { dead, red, orange, yellow, green, cyan, blue, purple, magenta };
+const int nDefaultColors = 9;
+const rgb24 defaultColors[nDefaultColors] = { dead, red, orange, yellow, green, cyan, blue, purple, magenta };
 // Generations colors
 //const int nColors = 8;
 //const rgb24 colors[nColors] = { dead, rgb24(255, 0, 0), rgb24(255, 42, 0), rgb24(255, 84, 0), rgb24(255, 126, 0), rgb24(255, 168, 0), rgb24(255, 210, 0), rgb24(255, 254, 0) };
 // SteepleChas colors
-const int nColors = 4;
-const rgb24 colors[nColors] = { dead, rgb24(255, 0, 0), rgb24(255, 128, 0),  rgb24(255, 255, 0) };
+// const int nColors = 4;
+// const rgb24 colors[nColors] = { dead, rgb24(255, 0, 0), rgb24(255, 128, 0),  rgb24(255, 255, 0) };
 
 const int xSize = kMatrixWidth;
 const int ySize = kMatrixHeight;
-Life* life;
-const int speed = 20;
-int initialDelay = 0;
-int xSpeed = 0;
-int ySpeed = 0;
+LEDMatrixLife* life;
+NiemiecTreeRule defaultRule;
 
 // Teensy 3.0 has the LED on pin 13
 const int ledPin = 13;
@@ -131,12 +128,20 @@ void setup() {
   backgroundLayer.enableColorCorrection(true);
 
   //life = new SimpleLife(xSize, ySize, new NiemiecTreeRule());
-  life = new InfiniteLife(2, new Generations1TreeRule());
+  Life* lifeImplementation = new InfiniteLife(4, &defaultRule);
+  //Life* lifeImplementation = new SimpleLife(xSize, ySize, defaultRule);
+  life = new LEDMatrixLife(*lifeImplementation, &backgroundLayer);
 }
 
-void start();
-void SteepleChase();
-void loadrle(int x, int y, const char *rle);
+void start(LEDMatrixLife* life);
+void SteepleChase(LEDMatrixLife* life);
+void Lava(LEDMatrixLife* life);
+void tannersp46gun(LEDMatrixLife* life);
+void snarkcatalystvariants(LEDMatrixLife* life);
+void ASJ2023(LEDMatrixLife* life);
+void startText(LEDMatrixLife* life, const char* text);
+void startRandom(LEDMatrixLife* life);
+void loadrle(LEDMatrixLife* life, int x, int y, const char *rle);
 
 // the loop() method runs over and over again,
 // as long as the board has power
@@ -153,79 +158,40 @@ void loop() {
   backgroundLayer.fillScreen(dead);
   backgroundLayer.swapBuffers(true);
 
-  initialDelay = 0;
+  start(life);
+}
+
+void start(LEDMatrixLife* life) {
   life->clear();
-  start();
-  life->iterateLive([](int x, int y, int on) {
-    if (x >= 0 && x < xSize && y >= 0 && y < ySize) {
-      backgroundLayer.drawPixel(x, y, colors[on]);
-    }
-  });
-  backgroundLayer.swapBuffers(true);
-
-  int looksDead = 0;
-  int lastcrc = 0;
-  delay(initialDelay);
-  //life->dump();
-  //for (;;) {}
-
-  for (int l = 1; l <= 8000; l++) {
-    delay(speed);
-    life->nextGeneration();
-    int crc = 0;
-    backgroundLayer.fillScreen(dead);
-    //life->iterateLive(update);
-
-    life->iterateLive([&crc](int x, int y, int on) {
-      if (x >= 0 && x < xSize && y >= 0 && y < ySize) {
-        backgroundLayer.drawPixel(x, y, colors[on]);
-        for (byte tempI = 8; tempI; tempI--) {
-          byte sum = (crc ^ on) & 0x01;
-          crc >>= 1;
-          if (sum) {
-            crc ^= 0x8C;
-          }
-          on >>= 1;
-        }
-      }
-    });
-    backgroundLayer.swapBuffers(true);
-    //if (l == 1000) for (;;){}
-
-    if (l % 12 == 0) {
-      if (crc == lastcrc) {
-        looksDead++;
-      } else {
-        looksDead = 0;
-      }
-      if (looksDead > 10) break;
-      lastcrc = crc;
-    }
+  life->setRule(9, &defaultRule);
+  life->setColorMap(nDefaultColors, defaultColors);
+  life->setInitialDelay(0);
+  int r = random(100);
+  if (r < 10) {
+    //ASJ2023(life);
+    startText(life, "ASJ\n2023");
+  } else if (r == 10) {
+    snarkcatalystvariants(life);
+  } else if (r == 11) {
+    tannersp46gun(life);
+  } else if (r == 12) {
+    SteepleChase(life);
+  } else if (r == 13) {
+    Lava(life);
+  } else if (r < 20) {
+    char buffer[40];
+    const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
+    startText(life, buffer);
+  } else {
+    startRandom(life);
   }
+  //lobstr(life);
+
 }
 
-void start() {
-  //int r = random(100);
-  //if (r < 10) {
-  //  ASJ2023();
-  //} else if (r == 10) {
-  //  snarkcatalystvariants();
-  //} else if (r == 11) {
-  //  tannersp46gun();
-  //} else {
-  //  startRandom();
-  //lobstr();
-  //char buffer[40];
-  //const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-  //sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
-  //startText(buffer);
-  //Lava();
-  SteepleChase();
-  //startText("ASJ\n2023");
-}
-
-void startText(const char* text) {
-  initialDelay = 1000;
+void startText(LEDMatrixLife* life, const char* text) {
+  life->setInitialDelay(1000);
   GFXcanvas8 canvas(xSize, ySize);
   canvas.setFont(&FreeSerif9pt7b);
   // Count lines
@@ -253,7 +219,7 @@ void startText(const char* text) {
       canvas.setCursor((xSize - w) / 2, canvas.getCursorY() - 4);
     } else {
       canvas.setTextColor(color++);
-      if (color >= nColors) color = 1;
+      if (color >= nDefaultColors) color = 1;
       canvas.print(text[i]);
     }
   }
@@ -262,22 +228,30 @@ void startText(const char* text) {
       life->set(x, y, canvas.getPixel(x, y));
     }
   }
+  life->setInitialDelay(2000);
+  life->run();
 }
 
-void startRandom() {
+void startRandom(LEDMatrixLife* life) {
   float prob = .25;
-  for (int x = 0; x < xSize; x++) {
-    for (int y = 0; y < ySize; y++) {
+  for (int y = 0; y < ySize; y++) {
+    for (int x = 0; x < xSize; x++) {
       int r = random(256);
-      int on = r / 256. < prob ? 1 + (r % (nColors - 1)) : 0;
+      int on = r / 256. < prob ? 1 + (r % (nDefaultColors - 1)) : 0;
       life->set(x, y, on);
     }
   }
+  life->run();
 }
 
 // Lava rule by Mirek Wojtowicz
-void Lava() {
+void Lava(LEDMatrixLife* life) {
   int x = 63, y = 63;  // rule = 12345/45678/8:T300,300
+  GenerationsTreeRule rule;
+  life->setRule(8, &rule);
+  const int nColors = 8;
+  const rgb24 colors[nColors] = { dead, rgb24(255, 0, 0), rgb24(255, 42, 0), rgb24(255, 84, 0), rgb24(255, 126, 0), rgb24(255, 168, 0), rgb24(255, 210, 0), rgb24(255, 254, 0) };
+  life->setColorMap(nColors, colors);
   const char* rle = R"(
     63A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$
     A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A
@@ -287,7 +261,8 @@ void Lava() {
     A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A$A61.A
     $A61.A$A61.A$A61.A$63A!
   )";
-  loadrle((xSize - x) / 2, (ySize - y) / 2, rle);
+  loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->run();
 }
 
 // Star Wars Fun collection
@@ -295,8 +270,13 @@ void Lava() {
 // Steeplechase, p20
 // 
 // Mirek Wojtowicz, May 1999
-void SteepleChase() {
+void SteepleChase(LEDMatrixLife* life) {
   int x = 63, y = 59;  // rule = 345/2/4:P500,500
+  Generations1TreeRule rule;
+  life->setRule(4, &rule);
+  const rgb24 colors[4] = { dead, rgb24(255, 0, 0), rgb24(255, 128, 0),  rgb24(255, 255, 0) };
+  life->setColorMap(4, colors);
+
   const char* rle = R"(
     2$31.A$30.3A8.A2.A$31.A8.6A$31.A9.A2.A$30.3A8.A2.A$31.A8.6A$31.A9.A2.
     A$30.3A8.A2.A$31.A8.6A$5.CB24.A9.A2.A$7.C22.3A8.A2.A$4.A.A.B22.A8.6A
@@ -310,11 +290,12 @@ void SteepleChase() {
     10.A.2A.A.2A.A8.A6.A9.A5.3AB$2.3A8.3A2.3A2.3A6.3A4.3A7.3A5.A.A$3.A10.
     A4.A4.A8.A6.A9.A$2.ABC!
   )";
-  loadrle((xSize - x) / 2, (ySize - y) / 2, rle);
+  loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->run();
 }
 
-void ASJ2023() {
-  initialDelay = 1000;
+void ASJ2023(LEDMatrixLife* life) {
+  life->setInitialDelay(1000);
   int x = 30, y = 22;
   const char* rle = R"(
     6.2B5.4C5.5A$5.B2.B3.C4.C6.A$4.B4.B2.C11.A$4.B4.B2.C11.A$4.B4.B3.4C7.
@@ -323,10 +304,12 @@ void ASJ2023() {
     4.E6.F5.3G$2.2D4.E4.E4.2F9.G$.D6.E4.E3.F11.G$D8.E2.E3.F7.G4.G$6D4.2E4.
     6F3.4G!
     )";
-  loadrle((xSize - x) / 2, (ySize - y) / 2, rle);
+  loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->setInitialDelay(1000);
+  life->run();
 }
 
-void snarkcatalystvariants() {
+void snarkcatalystvariants(LEDMatrixLife* life) {
   //#N snarkcatalystvariants.rle
   //#C four Snark catalyst variants
   //#C    Top:  original variant by Mike Playle
@@ -346,10 +329,11 @@ void snarkcatalystvariants() {
     2$24.C$23.C.C.2C4.2C$23.C.C.C.C2.C2.C$22.2C.C.C.C3.2C$23.C2.2C.4C$23.
     C4.C3.C$24.3C.C2.C$26.C.C.C$29.C!
     )";
-  loadrle((xSize - x) / 2, (ySize - y) / 2, rle);
+  loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->run();
 }
 
-void tannersp46gun() {
+void tannersp46gun(LEDMatrixLife* life) {
   //#N tannersp46gun.rle
   //#C https://conwaylife.com/wiki/Tanner%27s_p46
   //#C https://www.conwaylife.com/patterns/tannersp46gun.rle
@@ -360,10 +344,11 @@ void tannersp46gun() {
     A.2A.A.2A.A$3.2D3.2A.A5.A.2A$3.2D4.2A.A3.A.2A2.A.2A$10.3A3.3A3.2A.A2$
     2.2D$3.D$3D$D13.D$13.D.D.D.2D$12.D.2D.2D.D$12.D$11.2D!
     )";
-  loadrle(0, 0, rle);
+  loadrle(life, 0, 0, rle);
+  life->run();
 }
 
-void lobstr() {
+void lobstr(LEDMatrixLife* life) {
   //#N lobster.rle
   //#O Matthias Merzenich, 2011
   //#C https://conwaylife.com/wiki/Lobster_(spaceship)
@@ -375,10 +360,11 @@ void lobstr() {
     o2bo$2b2o4bobo4b2o$9bo5bo3bo3bo$10bo2bo4b2o$11b2o3bo5bobo$15bo8b2o$15b
     o4bo$14bo3bo$14bo5b2o$15bo5bo!
     )";
-  loadrle((xSize - x) / 2, (ySize - y) / 2, rle);
+  loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->run();
 }
 
-void loadrle(int xOff, int yOff, const char* rle) {
+void loadrle(LEDMatrixLife* life, int xOff, int yOff, const char* rle) {
   life->clear();
 
   const char* p = rle;

@@ -508,28 +508,35 @@ public:
   // methods
   virtual void clear() = 0;
   virtual void set(int x, int y, byte value) = 0;
-  virtual byte get(int x, int y) = 0;
   virtual void nextGeneration() = 0;
   virtual void iterateLive(std::function<void(int x, int y, int value)> lambda) = 0;
-  virtual void dump(){};
+  virtual void setRule(int nStates, TreeRule* rule) = 0;
 private:
 };
 
 class InfiniteLife : public Life {
 public:
-  InfiniteLife(byte bitsPerPixel, TreeRule* treeRule)
-    : bitsPerPixel(bitsPerPixel), treeRule(treeRule) {
+  InfiniteLife(int nStates, TreeRule* treeRule) : treeRule(treeRule) {
     data1 = new Data(10000);
     data2 = new Data(10000);
     data = data1;
     next = data2;
-    pixelsPerData = 32 / bitsPerPixel;
-    mask = (1 << bitsPerPixel) - 1;
-    clear();
+    setRule(nStates, treeRule);
   }
   ~InfiniteLife() {
     free(data1);
     free(data2);
+  }
+  virtual void setRule(int nStates, TreeRule* rule) {
+    treeRule = rule;
+    bitsPerPixel = -1;
+    while (nStates) {
+      nStates/=2;
+      bitsPerPixel++;
+    }
+    pixelsPerData = 32 / bitsPerPixel;
+    mask = (1 << bitsPerPixel) - 1;
+    clear();
   }
   virtual void clear() {
     data->clear();
@@ -547,9 +554,6 @@ public:
     //}
   }
 
-  virtual byte get(int x, int y) {
-    return 0;
-  }
   virtual void nextGeneration() {
     if (data->dataLength == 0) return;
     Row prevRow(*this);   // Row at y-1
@@ -862,6 +866,10 @@ public:
   ~SimpleLife() {
     free(data1);
     free(data2);
+  }
+  virtual void setRule(int nStates, TreeRule* rule) {
+    this->treeRule = rule;
+    clear();
   }
   // methods
   void clear() {
