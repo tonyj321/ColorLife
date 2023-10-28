@@ -6,6 +6,7 @@
 #include <SmartMatrix.h>
 
 #include "LEDMatrixLife.h"
+#include "CharStream.h"
 
 #define COLOR_DEPTH 24                                         // Choose the color depth used for storing pixels in the layers: 24 or 48 (24 is good for most sketches - If the sketch uses type `rgb24` directly, COLOR_DEPTH must be 24)
 const uint16_t kMatrixWidth = 64;                              // Set to the width of your display, must be a multiple of 8
@@ -110,8 +111,11 @@ void setup() {
   setSyncProvider(getTeensy3Time);
 
   Serial.begin(115200);
-  while (!Serial)
-    ;  // Wait for Arduino Serial Monitor to open
+  unsigned long start = millis();
+  while (!Serial) {  // Wait for Arduino Serial Monitor to open
+      if (millis() - start > 1000)
+      break;
+  }
   delay(100);
   if (timeStatus() != timeSet) {
     Serial.println("Unable to sync with the RTC");
@@ -128,7 +132,7 @@ void setup() {
   backgroundLayer.enableColorCorrection(true);
 
   //life = new SimpleLife(xSize, ySize, new NiemiecTreeRule());
-  Life* lifeImplementation = new InfiniteLife(4, &defaultRule);
+  Life* lifeImplementation = new InfiniteLife(9, &defaultRule);
   //Life* lifeImplementation = new SimpleLife(xSize, ySize, defaultRule);
   life = new LEDMatrixLife(*lifeImplementation, &backgroundLayer);
 }
@@ -141,6 +145,8 @@ void snarkcatalystvariants(LEDMatrixLife* life);
 void ASJ2023(LEDMatrixLife* life);
 void startText(LEDMatrixLife* life, const char* text);
 void startRandom(LEDMatrixLife* life);
+void rpentomino(LEDMatrixLife* life);
+void p107penominohassler(LEDMatrixLife* life);
 void loadrle(LEDMatrixLife* life, int x, int y, const char *rle);
 
 // the loop() method runs over and over again,
@@ -178,7 +184,11 @@ void start(LEDMatrixLife* life) {
     SteepleChase(life);
   } else if (r == 13) {
     Lava(life);
-  } else if (r < 20) {
+  } else if (r == 14) {
+    rpentomino(life);
+  } else if (r == 15) {
+    p107penominohassler(life);
+  } else if (r < 25 && year()>=2023) {
     char buffer[40];
     const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
     sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
@@ -187,7 +197,6 @@ void start(LEDMatrixLife* life) {
     startRandom(life);
   }
   //lobstr(life);
-
 }
 
 void startText(LEDMatrixLife* life, const char* text) {
@@ -294,6 +303,22 @@ void SteepleChase(LEDMatrixLife* life) {
   life->run();
 }
 
+//#N p107rpentominohassler.rle
+//#O Mitchell Riley, 2023
+//#C https://conwaylife.com/wiki/86P107
+//#C https://www.conwaylife.com/patterns/p107rpentominohassler.rle
+void p107penominohassler(LEDMatrixLife* life) {
+  int x = 51, y = 30; // rule = B3/S23
+  const char* rle = R"(
+    6bo$6b3o$9bo$8b2o32b2o$42b2o2$b2o29b2o$bo30bo16b2o$2b3o25bobo16bo$4bo
+    25b2o15bobo$47b2o$10b2o$2o7bo2bo$2o6b2ob2o$10bo$40bo$38b2ob2o6b2o$38b
+    o2bo7b2o$39b2o$2b2o$bobo15b2o25bo$bo16bobo25b3o$2o16bo30bo$17b2o29b2o
+    2$7b2o$7b2o32b2o$41bo$42b3o$44bo!
+  )";
+  loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->run();
+}
+
 void ASJ2023(LEDMatrixLife* life) {
   life->setInitialDelay(1000);
   int x = 30, y = 22;
@@ -348,6 +373,16 @@ void tannersp46gun(LEDMatrixLife* life) {
   life->run();
 }
 
+void rpentomino(LEDMatrixLife* life) {
+  //#N R-pentomino
+  //#C A methuselah with lifespan 1103.
+  //#C www.conwaylife.com/wiki/index.php?title=R-pentomino
+  int x = 3, y = 3;// rule = B3/S23
+  const char* rle = "b2o$2ob$bo!";
+  loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->run();
+}
+
 void lobstr(LEDMatrixLife* life) {
   //#N lobster.rle
   //#O Matthias Merzenich, 2011
@@ -364,16 +399,15 @@ void lobstr(LEDMatrixLife* life) {
   life->run();
 }
 
-void loadrle(LEDMatrixLife* life, int xOff, int yOff, const char* rle) {
+void loadrle(LEDMatrixLife* life, int xOff, int yOff, Stream& in) {
   life->clear();
 
-  const char* p = rle;
   int count = 0;
   int x = xOff;
   int y = yOff;
   for (;;) {
-    char c = *(p++);
-    if (c == '!' || c == 0) {
+    int c = in.read();
+    if (c == '!' || c == 0 || c == -1) {
       return;
     } else if (c == ' ' || c == '\n' || c == '\t') {
       continue;
@@ -384,7 +418,7 @@ void loadrle(LEDMatrixLife* life, int xOff, int yOff, const char* rle) {
       if (c == 'b' || c == '.') {
         x += count;
       } else if (c == 'o') {
-        byte on = 1;
+        byte on = 1 + random(7);
         for (int i = 0; i < count; i++) {
           life->set(x, y, on);
           x++;
@@ -402,4 +436,9 @@ void loadrle(LEDMatrixLife* life, int xOff, int yOff, const char* rle) {
       count = 0;
     }
   }
+}
+
+void loadrle(LEDMatrixLife* life, int xOff, int yOff, const char* rle) {
+  CharStream stream(rle);
+  loadrle(life, xOff, yOff, stream);
 }
