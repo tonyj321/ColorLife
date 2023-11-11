@@ -94,12 +94,43 @@ unsigned long processSyncMessage() {
 
   if (Serial.find(TIME_HEADER)) {
     pctime = Serial.parseInt();
-    return pctime;
     if (pctime < DEFAULT_TIME) {  // check the value is a valid time (greater than Jan 1 2013)
       pctime = 0L;                // return 0 to indicate that the time is not valid
     }
   }
   return pctime;
+}
+
+/**
+ * Assumes DST from 2am on second sunday in march until 2am on first sunday in November
+ * This code is not currently correct, it does not take into account the "gray zone" when
+ * we fall back, and DST status cannot be determined from the time_t
+*/
+boolean isDST(time_t time) {
+  Serial.println(time);
+  int currentYear = year(time);
+  Serial.println(currentYear);
+  tmElements_t tm;
+  tm.Year = currentYear - 1970;
+  tm.Month = 3;
+  tm.Day = 14;
+  tm.Hour = 2;
+  tm.Minute = 0;
+  tm.Second = 0;
+  time_t start = makeTime(tm);
+  int day = dayOfWeek(start) - 1;
+  Serial.println(day);
+  start -= day*24*60*60;
+  Serial.println(start);
+  if (time < start) return false;
+  tm.Month = 11;
+  tm.Day =  7;
+  time_t end = makeTime(tm);
+  day = dayOfWeek(end) - 1;
+  Serial.println(day);
+  end -= day*24*60*60;
+  Serial.println(end);
+  return time < end;
 }
 
 // the setup() method runs once, when the sketch starts
@@ -121,6 +152,12 @@ void setup() {
     Serial.println("Unable to sync with the RTC");
   } else {
     Serial.println("RTC has set the system time");
+  }
+  boolean isDst = isDST(now());
+  if (isDst) {
+    Serial.println("We are currently in DST");
+  } else {
+    Serial.println("We are not currently in DST");
   }
 
   Entropy.Initialize();
@@ -147,6 +184,9 @@ void startText(LEDMatrixLife* life, const char* text);
 void startRandom(LEDMatrixLife* life);
 void rpentomino(LEDMatrixLife* life);
 void p107penominohassler(LEDMatrixLife* life);
+void lobstr(LEDMatrixLife* life);
+void period201glidergun(LEDMatrixLife* life);
+void SirRobin(LEDMatrixLife* life);
 void loadrle(LEDMatrixLife* life, int x, int y, const char *rle);
 
 // the loop() method runs over and over again,
@@ -155,6 +195,7 @@ void loop() {
   if (Serial.available()) {
     time_t t = processSyncMessage();
     if (t != 0) {
+      Serial.println("Clock set from pctime");
       Teensy3Clock.set(t);  // set the RTC
       setTime(t);
     }
@@ -172,6 +213,8 @@ void start(LEDMatrixLife* life) {
   life->setRule(9, &defaultRule);
   life->setColorMap(nDefaultColors, defaultColors);
   life->setInitialDelay(0);
+  life->setViewportSpeed(0, 0, 0);
+  // SirRobin(life);
   int r = random(100);
   if (r < 10) {
     //ASJ2023(life);
@@ -188,7 +231,13 @@ void start(LEDMatrixLife* life) {
     rpentomino(life);
   } else if (r == 15) {
     p107penominohassler(life);
-  } else if (r < 25 && year()>=2023) {
+  } else if (r == 16) {
+    lobstr(life);
+  } else if (r == 17) {
+    period201glidergun(life);
+  } else if (r == 18) {
+    SirRobin(life);    
+  } else if (r < 27 && year()>=2023) {
     char buffer[40];
     const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
     sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
@@ -196,7 +245,6 @@ void start(LEDMatrixLife* life) {
   } else {
     startRandom(life);
   }
-  //lobstr(life);
 }
 
 void startText(LEDMatrixLife* life, const char* text) {
@@ -396,6 +444,46 @@ void lobstr(LEDMatrixLife* life) {
     o4bo$14bo3bo$14bo5b2o$15bo5bo!
     )";
   loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->setViewportSpeed(-10, -10, 70);
+  life->run();
+}
+
+void period201glidergun(LEDMatrixLife* life) {
+  //#N period201glidergun.rle
+  //#O iNoMed, 2023
+  //#C https://conwaylife.com/wiki/Period-201_glider_gun
+  //#C https://www.conwaylife.com/patterns/period201glidergun.rle
+  int x = 60, y = 32; // rule = B3/S23
+  const char* rle = R"(
+    17bo6b2o$17b3o4b2o28b2o$20bo33b2o$11bo7b2o16b3o$11b3o21bob3o$14bo19bo$
+    13b2o18b2o$34b2o$35bo$2o$bo$bobo$2b2o7$56b2o$56bobo$58bo$58b2o$24bo$
+    24b2o$25b2o18b2o$25bo19bo$20b3obo21b3o$20b3o16b2o7bo$4b2o33bo$4b2o28b
+    2o4b3o$34b2o6bo!
+    )";
+  loadrle(life, (xSize - x) / 2, (ySize - y) / 2, rle);
+  life->run();
+}
+
+void SirRobin(LEDMatrixLife* life) {
+  //#N Sir Robin
+  //#O Adam P. Goucher, Tom Rokicki; 2018
+  //#C The first elementary knightship to be found in Conway's Game of Life.
+  //#C https://conwaylife.com/wiki/Sir_Robin
+  int x = 31, y = 79; // rule = B3/S23
+  const char* rle = R"(
+    4b2o$4bo2bo$4bo3bo$6b3o$2b2o6b4o$2bob2o4b4o$bo4bo6b3o$2b4o4b2o3bo$o9b
+    2o$bo3bo$6b3o2b2o2bo$2b2o7bo4bo$13bob2o$10b2o6bo$11b2ob3obo$10b2o3bo2b
+    o$10bobo2b2o$10bo2bobobo$10b3o6bo$11bobobo3bo$14b2obobo$11bo6b3o2$11bo
+    9bo$11bo3bo6bo$12bo5b5o$12b3o$16b2o$13b3o2bo$11bob3obo$10bo3bo2bo$11bo
+    4b2ob3o$13b4obo4b2o$13bob4o4b2o$19bo$20bo2b2o$20b2o$21b5o$25b2o$19b3o
+    6bo$20bobo3bobo$19bo3bo3bo$19bo3b2o$18bo6bob3o$19b2o3bo3b2o$20b4o2bo2b
+    o$22b2o3bo$21bo$21b2obo$20bo$19b5o$19bo4bo$18b3ob3o$18bob5o$18bo$20bo$
+    16bo4b4o$20b4ob2o$17b3o4bo$24bobo$28bo$24bo2b2o$25b3o$22b2o$21b3o5bo$
+    24b2o2bobo$21bo2b3obobo$22b2obo2bo$24bobo2b2o$26b2o$22b3o4bo$22b3o4bo$
+    23b2o3b3o$24b2ob2o$25b2o$25bo2$24b2o$26bo!
+    )";
+  loadrle(life, 10 + (xSize - x) / 2, 10, rle);
+  life->setViewportSpeed(-20, -40, 120);
   life->run();
 }
 
@@ -418,7 +506,7 @@ void loadrle(LEDMatrixLife* life, int xOff, int yOff, Stream& in) {
       if (c == 'b' || c == '.') {
         x += count;
       } else if (c == 'o') {
-        byte on = 1 + random(7);
+        byte on = random(1, nDefaultColors);
         for (int i = 0; i < count; i++) {
           life->set(x, y, on);
           x++;

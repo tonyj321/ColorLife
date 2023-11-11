@@ -27,7 +27,7 @@ class LEDMatrixLife {
     virtual void run() {
         backgroundLayer->fillScreen(colors[0]);
         lifeImplementation.iterateLive([this](int x, int y, int on) {
-            if (x >= 0 && x < xSize && y >= 0 && y < ySize) {
+            if (x >= 0 && x < xViewportSize && y >= 0 && y < yViewportSize) {
                 backgroundLayer->drawPixel(x, y, colors[on]);
             }
         });
@@ -35,15 +35,22 @@ class LEDMatrixLife {
         delay(initialDelay);
         int lastcrc = 0;
         int looksDead = 0;
+        int xMin = xViewportMin;
+        int yMin = yViewportMin;
         for (int l = 1; l <= 8000; l++) {
             delay(speed);
             lifeImplementation.nextGeneration();
             int crc = 0;
             backgroundLayer->fillScreen(colors[0]);
 
-            lifeImplementation.iterateLive([this, &crc](int x, int y, int on) {
-                if (x >= 0 && x < xSize && y >= 0 && y < ySize) {
-                    backgroundLayer->drawPixel(x, y, colors[on]);
+            if (speedDivisor > 0 && l % speedDivisor == 0) {
+                xMin += speedX;
+                yMin += speedY;
+            }
+
+            lifeImplementation.iterateLive([this, &crc, &xMin, &yMin](int x, int y, int on) {
+                if (x >= xMin && x-xMin < xViewportSize && y >= yMin && y-yMin < yViewportSize) {
+                    backgroundLayer->drawPixel(x-xMin, y-yMin, colors[on]);
                     for (byte tempI = 8; tempI; tempI--) {
                         byte sum = (crc ^ on) & 0x01;
                         crc >>= 1;
@@ -68,7 +75,18 @@ class LEDMatrixLife {
         }
     }
 
-    virtual void setViewport(int x, int y, int width, int height) {}
+    virtual void setViewport(int x, int y, int width, int height) {
+        xViewportMin = x;
+        yViewportMin = y;
+        xViewportSize = width;
+        yViewportSize = height;
+    }
+
+    virtual void setViewportSpeed(int x, int y, int divisor) {
+        speedX = x;
+        speedY = y;
+        speedDivisor = divisor;
+    }
 
     virtual void setColorMap(int nColors, const rgb24 *colors) {
         this->nColors = nColors;
@@ -83,8 +101,13 @@ class LEDMatrixLife {
     Life &lifeImplementation;
     int initialDelay = 0;
     int speed = 20;
-    int xSize = 64;
-    int ySize = 64;
+    int xViewportMin = 0;
+    int yViewportMin = 0;
+    int xViewportSize = 64;
+    int yViewportSize = 64;
+    int speedX = 0;
+    int speedY = 0;
+    int speedDivisor = 0;
     SMLayerBackground<rgb24, 0U> *backgroundLayer;
     int nColors;
     const rgb24 *colors;

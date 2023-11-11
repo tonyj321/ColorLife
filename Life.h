@@ -530,9 +530,10 @@ public:
   virtual void setRule(int nStates, TreeRule* rule) {
     treeRule = rule;
     bitsPerPixel = -1;
-    while (nStates) {
-      nStates/=2;
-      bitsPerPixel++;
+    for (int bitsPerPixel=0; bitsPerPixel<=8; bitsPerPixel++) {
+      if ((1<<bitsPerPixel) >= nStates) {
+        break;
+      }
     }
     pixelsPerData = 32 / bitsPerPixel;
     mask = (1 << bitsPerPixel) - 1;
@@ -547,7 +548,7 @@ public:
   }
 
   virtual void dump() {
-    Serial.printf("Length %d\n", data->dataLength);
+    //Serial.printf("Length %d\n", data->dataLength);
     //for (int i = 0; i < dataLength; i++) {
     //  int datum = data[i];
     //Serial.printf("%d %d\n", i, datum);
@@ -612,7 +613,7 @@ public:
     Data* temp = data;
     data = next;
     next = temp;
-    Serial.println(data->dataLength);
+    //Serial.println(data->dataLength);
   }
   virtual void iterateLive(std::function<void(int x, int y, int value)> lambda) {
     int x = 0, y = 0;
