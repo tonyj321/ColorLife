@@ -215,37 +215,37 @@ void start(LEDMatrixLife* life) {
   life->setInitialDelay(0);
   life->setViewportSpeed(0, 0, 0);
   // SirRobin(life);
-  startText(life, "Testing");
-  // int r = random(100);
-  // if (r < 10) {
-  //   //ASJ2023(life);
-  //   startText(life, "ASJ\n2023");
-  // } else if (r == 10) {
-  //   snarkcatalystvariants(life);
-  // } else if (r == 11) {
-  //   tannersp46gun(life);
-  // } else if (r == 12) {
-  //   SteepleChase(life);
-  // } else if (r == 13) {
-  //   Lava(life);
-  // } else if (r == 14) {
-  //   rpentomino(life);
-  // } else if (r == 15) {
-  //   p107penominohassler(life);
-  // } else if (r == 16) {
-  //   lobstr(life);
-  // } else if (r == 17) {
-  //   period201glidergun(life);
-  // } else if (r == 18) {
-  //   SirRobin(life);    
-  // } else if (r < 27 && year()>=2023) {
-  //   char buffer[40];
-  //   const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-  //   sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
-  //   startText(life, buffer);
-  // } else {
-  //   startRandom(life);
-  // }
+  //startText(life, "JAJ\n60 years\n2024");
+  int r = random(100);
+  if (r < 10) {
+    //ASJ2023(life);
+    startText(life, "JAJ\n60 years\n2024");
+  } else if (r == 10) {
+    snarkcatalystvariants(life);
+  } else if (r == 11) {
+    tannersp46gun(life);
+  } else if (r == 12) {
+    SteepleChase(life);
+  } else if (r == 13) {
+    Lava(life);
+  } else if (r == 14) {
+    rpentomino(life);
+  } else if (r == 15) {
+    p107penominohassler(life);
+  } else if (r == 16) {
+    lobstr(life);
+  } else if (r == 17) {
+    period201glidergun(life);
+  } else if (r == 18) {
+    SirRobin(life);    
+  } else if (r < 27 && year()>=2023) {
+    char buffer[40];
+    const char* months[12] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    sprintf(buffer, "%s %d\n%d\n%02d:%02d:%02d", months[month() - 1], day(), year(), hour(), minute(), second());
+    startText(life, buffer);
+  } else {
+    startRandom(life);
+  }
 }
 
 void startText(LEDMatrixLife* life, const char* text) {
